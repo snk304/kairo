@@ -165,10 +165,7 @@ namespace App\OpenApi;
  *     @OA\Property(
  *         property="errors",
  *         type="object",
- *         additionalProperties=@OA\AdditionalPropertiesAnnotation(
- *             type="array",
- *             @OA\Items(type="string")
- *         )
+ *         additionalProperties=@OA\Schema(type="array", @OA\Items(type="string"))
  *     )
  * )
  */

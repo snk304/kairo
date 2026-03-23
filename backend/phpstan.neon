@@ -11,3 +11,10 @@ parameters:
     excludePaths:
         # OpenAPIアノテーション専用クラス（ドキュメント生成のみ）
         - app/OpenApi
+
+    ignoreErrors:
+        # JsonResource は __get() でモデルのプロパティをプロキシするため
+        # Larastan がモデル型を追跡できずに発生する誤検知を抑制
+        - '#Access to an undefined property App\\Http\\Resources\\[^:]+::\$#'
+        # TransientToken には delete() がないため method_exists チェックは正当
+        - '#Call to function method_exists\(\) with Laravel\\Sanctum\\PersonalAccessToken and .delete. will always evaluate to true#'

@@ -1,0 +1,162 @@
+name: Smoke Test（本番環境）
+
+on:
+  # main へのデプロイ後に自動実行
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types: [completed]
+  # 手動実行
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    name: 本番スモークテスト
+    runs-on: ubuntu-latest
+    # CI が成功した場合のみ実行（手動実行時は常に実行）
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    env:
+      BACKEND_URL: https://kairo-iphu.onrender.com
+      FRONTEND_URL: https://kairo-red.vercel.app
+
+    steps:
+      - name: Render のウォームアップ（スリープ解除）
+        run: |
+          echo "Render を起動中..."
+          for i in {1..10}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/health")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Render が起動しました（試行 $i 回目）"
+              break
+            fi
+            echo "待機中... ($i/10) Status: $STATUS"
+            sleep 10
+          done
+
+      # ============================================================
+      # API スモークテスト
+      # ============================================================
+      - name: ヘルスチェック
+        run: |
+          RESPONSE=$(curl -s "$BACKEND_URL/api/health")
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | grep -q '"status":"ok"'
+          echo "✅ ヘルスチェック OK"
+
+      - name: マスタデータ取得
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/master/disability-types")
+          echo "Status: $STATUS"
+          [ "$STATUS" = "200" ] && echo "✅ 障害種別マスタ OK" || (echo "❌ 障害種別マスタ NG" && exit 1)
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/master/prefectures")
+          [ "$STATUS" = "200" ] && echo "✅ 都道府県マスタ OK" || (echo "❌ 都道府県マスタ NG" && exit 1)
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/master/job-categories")
+          [ "$STATUS" = "200" ] && echo "✅ 職種マスタ OK" || (echo "❌ 職種マスタ NG" && exit 1)
+
+      - name: 求人一覧取得（未認証）
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" "$BACKEND_URL/api/jobs")
+          STATUS=$(echo "$RESPONSE" | tail -1)
+          echo "Status: $STATUS"
+          [ "$STATUS" = "200" ] && echo "✅ 求人一覧 OK" || (echo "❌ 求人一覧 NG" && exit 1)
+
+      - name: 求職者一覧取得（未認証）
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/jobseekers")
+          [ "$STATUS" = "200" ] && echo "✅ 求職者一覧 OK" || (echo "❌ 求職者一覧 NG" && exit 1)
+
+      - name: ログイン（求職者）
+        id: login_jobseeker
+        run: |
+          RESPONSE=$(curl -s -X POST "$BACKEND_URL/api/auth/login" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            -d '{"email":"jobseeker1@example.com","password":"password"}')
+          echo "Response: $RESPONSE"
+          TOKEN=$(echo "$RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+          if [ -z "$TOKEN" ]; then
+            echo "❌ 求職者ログイン NG"
+            exit 1
+          fi
+          echo "✅ 求職者ログイン OK"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: 認証が必要なエンドポイント（求職者）
+        run: |
+          TOKEN="${{ steps.login_jobseeker.outputs.token }}"
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/jobseeker/profile" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/json")
+          [ "$STATUS" = "200" ] && echo "✅ 求職者プロフィール取得 OK" || (echo "❌ 求職者プロフィール取得 NG (Status: $STATUS)" && exit 1)
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/notifications" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/json")
+          [ "$STATUS" = "200" ] && echo "✅ 通知一覧取得 OK" || (echo "❌ 通知一覧取得 NG (Status: $STATUS)" && exit 1)
+
+      - name: ログイン（企業）
+        id: login_company
+        run: |
+          RESPONSE=$(curl -s -X POST "$BACKEND_URL/api/auth/login" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            -d '{"email":"company1@example.com","password":"password"}')
+          TOKEN=$(echo "$RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+          if [ -z "$TOKEN" ]; then
+            echo "❌ 企業ログイン NG"
+            exit 1
+          fi
+          echo "✅ 企業ログイン OK"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: 認証が必要なエンドポイント（企業）
+        run: |
+          TOKEN="${{ steps.login_company.outputs.token }}"
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/company/profile" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/json")
+          [ "$STATUS" = "200" ] && echo "✅ 企業プロフィール取得 OK" || (echo "❌ 企業プロフィール取得 NG (Status: $STATUS)" && exit 1)
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/company/jobs" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/json")
+          [ "$STATUS" = "200" ] && echo "✅ 企業求人一覧取得 OK" || (echo "❌ 企業求人一覧取得 NG (Status: $STATUS)" && exit 1)
+
+      - name: ログイン（管理者）
+        id: login_admin
+        run: |
+          RESPONSE=$(curl -s -X POST "$BACKEND_URL/api/auth/login" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            -d '{"email":"admin@example.com","password":"password"}')
+          TOKEN=$(echo "$RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+          if [ -z "$TOKEN" ]; then
+            echo "❌ 管理者ログイン NG"
+            exit 1
+          fi
+          echo "✅ 管理者ログイン OK"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: 認証が必要なエンドポイント（管理者）
+        run: |
+          TOKEN="${{ steps.login_admin.outputs.token }}"
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/admin/users" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/json")
+          [ "$STATUS" = "200" ] && echo "✅ 管理者ユーザー一覧 OK" || (echo "❌ 管理者ユーザー一覧 NG (Status: $STATUS)" && exit 1)
+
+      # ============================================================
+      # フロントエンド確認
+      # ============================================================
+      - name: フロントエンド疎通確認
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL")
+          [ "$STATUS" = "200" ] && echo "✅ フロントエンド OK" || (echo "❌ フロントエンド NG (Status: $STATUS)" && exit 1)

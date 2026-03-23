@@ -2,6 +2,7 @@
 .DS_Store
 .env
 /storage/api-docs
+matching_db
 .env.backup
 .env.production
 .phpactor.json

@@ -25,4 +25,3 @@ parameters:
         # （Controllers / Services / Policies / Resources 全体）
         - '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model::#'
         - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::#'
-        - '#Call to an undefined method App\\Http\\Resources\\ThreadResource::#'

@@ -1,0 +1,13 @@
+includes:
+    - ./vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+
+    # 5から始めて慣れたら上げていく
+    level: 5
+
+    excludePaths:
+        # OpenAPIアノテーション専用クラス（ドキュメント生成のみ）
+        - app/OpenApi

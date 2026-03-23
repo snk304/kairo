@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
+@import "tailwindcss";
+
+:root {
+  --cream: #F5F1EB;
+  --cream-card: #FEFCF8;
+  --ink: #1B1714;
+  --ink-mid: #3A3530;
+  --ink-muted: #78736A;
+  --ink-faint: #B5AFA7;
+  --forest: #2F5F42;
+  --forest-mid: #4A7C5B;
+  --forest-pale: #EBF2EE;
+  --clay: #BE6847;
+  --clay-pale: #FBF1EC;
+  --border: #DDD8CF;
+  --border-light: #EDE9E3;
+}
+
+@theme inline {
+  --color-cream: var(--cream);
+  --color-cream-card: var(--cream-card);
+  --color-ink: var(--ink);
+  --color-ink-mid: var(--ink-mid);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-forest: var(--forest);
+  --color-forest-mid: var(--forest-mid);
+  --color-forest-pale: var(--forest-pale);
+  --color-clay: var(--clay);
+  --color-clay-pale: var(--clay-pale);
+  --color-border: var(--border);
+  --color-border-light: var(--border-light);
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-serif: 'Noto Serif JP', Georgia, serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-serif);
+}
+
+/* ── Animations ─────────────────────────────── */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  opacity: 0;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.7s ease-out both;
+  opacity: 0;
+}
+
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-600 { animation-delay: 0.6s; }
+
+/* ── Custom Scrollbar ────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--cream); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+
+/* ── Selection color ─────────────────────────── */
+::selection {
+  background: var(--forest-pale);
+  color: var(--forest);
+}
+
+/* ── Hover utilities ────────────────────────── */
+.hover-forest { color: var(--ink-muted); transition: color 0.2s; }
+.hover-forest:hover { color: var(--forest); }
+
+.hover-ink { color: rgba(245,241,235,0.6); transition: color 0.2s; }
+.hover-ink:hover { color: var(--cream); }
+
+.hover-text { color: var(--ink-muted); transition: color 0.2s; }
+.hover-text:hover { color: var(--ink); }

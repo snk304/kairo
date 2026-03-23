@@ -1,0 +1,9 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Fitto API",
+    "version": "1.0.0",
+    "description": "CI で自動生成されます。ローカルでは `php artisan l5-swagger:generate` を実行してください。"
+  },
+  "paths": {}
+}

@@ -8,6 +8,9 @@ parameters:
     # 5から始めて慣れたら上げていく
     level: 5
 
+    # $request->user() の戻り型を App\Models\User に解決する
+    authModel: App\Models\User
+
     excludePaths:
         # OpenAPIアノテーション専用クラス（ドキュメント生成のみ）
         - app/OpenApi
@@ -18,3 +21,5 @@ parameters:
         - '#Access to an undefined property App\\Http\\Resources\\[^:]+::\$#'
         # TransientToken には delete() がないため method_exists チェックは正当
         - '#Call to function method_exists\(\) with Laravel\\Sanctum\\PersonalAccessToken and .delete. will always evaluate to true#'
+        # HasMany リレーション越しにスコープを呼ぶパターン（例: $profile->jobs()->published()）
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany::published\(\)#'

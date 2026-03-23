@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { AxiosError } from 'axios'
 import { jobseekersApi } from '@/lib/api/jobseekers'
 import { masterApi } from '@/lib/api/master'
 import { Input } from '@/components/ui/Input'
@@ -28,8 +29,11 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+const MAX_RESUME_SIZE = 10 * 1024 * 1024 // 10MB
+
 export default function ProfileEditPage() {
   const qc = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['jobseekers', 'me'],
@@ -87,6 +91,43 @@ export default function ProfileEditPage() {
         : jobseekersApi.store(data as Parameters<typeof jobseekersApi.store>[0]),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['jobseekers', 'me'] }),
   })
+
+  const uploadResume = useMutation({
+    mutationFn: (file: File) => jobseekersApi.uploadResume(file),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['jobseekers', 'me'] })
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    },
+  })
+
+  const deleteResume = useMutation({
+    mutationFn: () => jobseekersApi.deleteResume(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['jobseekers', 'me'] }),
+  })
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > MAX_RESUME_SIZE) {
+      uploadResume.reset()
+      // ファイルサイズエラーはカスタムエラーとして扱う
+      return alert('ファイルサイズは10MB以下にしてください')
+    }
+    uploadResume.mutate(file)
+  }
+
+  const handleDeleteResume = () => {
+    if (!confirm('履歴書を削除しますか？')) return
+    deleteResume.mutate()
+  }
+
+  const resumeError =
+    uploadResume.isError
+      ? (uploadResume.error as AxiosError<{ message?: string }>)?.response?.data?.message ??
+        'アップロードに失敗しました'
+      : deleteResume.isError
+      ? '削除に失敗しました'
+      : null
 
   if (isLoading) return <LoadingSpinner className="py-20" />
 
@@ -178,6 +219,71 @@ export default function ProfileEditPage() {
             placeholder="あなたの強みや経験を記載してください"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        {/* 履歴書 */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">履歴書</h2>
+          {profile?.resumeUrl ? (
+            <div className="flex items-center gap-4">
+              <a
+                href={profile.resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                現在の履歴書を確認する
+              </a>
+              <Button
+                type="button"
+                variant="outline"
+                isLoading={deleteResume.isPending}
+                onClick={handleDeleteResume}
+                className="text-red-600 border-red-300 hover:bg-red-50"
+              >
+                履歴書を削除
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-gray-500">PDFファイル（最大10MB）をアップロードしてください</p>
+              <div className="flex items-center gap-3">
+                <label className="cursor-pointer">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    className="sr-only"
+                    onChange={handleFileChange}
+                    disabled={uploadResume.isPending}
+                    aria-label="履歴書PDFファイルを選択"
+                  />
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-blue-500 ${
+                      uploadResume.isPending ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                    }`}
+                  >
+                    {uploadResume.isPending ? (
+                      <>
+                        <LoadingSpinner className="h-4 w-4" />
+                        アップロード中...
+                      </>
+                    ) : (
+                      'PDFを選択'
+                    )}
+                  </span>
+                </label>
+              </div>
+            </div>
+          )}
+          {resumeError && (
+            <p role="alert" className="mt-2 text-sm text-red-600">
+              {resumeError}
+            </p>
+          )}
+          {uploadResume.isSuccess && (
+            <p className="mt-2 text-sm text-green-600">履歴書をアップロードしました</p>
+          )}
         </div>
 
         {save.isSuccess && (

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -20,12 +21,12 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function jobseekerProfile()
+    public function jobseekerProfile(): HasOne
     {
         return $this->hasOne(JobseekerProfile::class);
     }
 
-    public function companyProfile()
+    public function companyProfile(): HasOne
     {
         return $this->hasOne(CompanyProfile::class);
     }

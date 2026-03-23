@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class JobseekerProfile extends Model
 {
@@ -23,10 +24,29 @@ class JobseekerProfile extends Model
         'desired_salary' => 'integer',
     ];
 
-    public function user() { return $this->belongsTo(User::class); }
-    public function prefecture() { return $this->belongsTo(Prefecture::class); }
-    public function disabilityType() { return $this->belongsTo(DisabilityType::class); }
-    public function desiredJobCategory() { return $this->belongsTo(JobCategory::class, 'desired_job_category_id'); }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
-    public function scopePublic($query) { return $query->where('is_public', true); }
+    public function prefecture(): BelongsTo
+    {
+        return $this->belongsTo(Prefecture::class);
+    }
+
+    public function disabilityType(): BelongsTo
+    {
+        return $this->belongsTo(DisabilityType::class);
+    }
+
+    public function desiredJobCategory(): BelongsTo
+    {
+        return $this->belongsTo(JobCategory::class, 'desired_job_category_id');
+    }
+
+    /** @param \Illuminate\Database\Eloquent\Builder<JobseekerProfile> $query */
+    public function scopePublic($query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('is_public', true);
+    }
 }

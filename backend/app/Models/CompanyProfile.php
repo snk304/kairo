@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CompanyProfile extends Model
 {
@@ -21,7 +23,18 @@ class CompanyProfile extends Model
         'disabled_hire_count' => 'integer',
     ];
 
-    public function user() { return $this->belongsTo(User::class); }
-    public function prefecture() { return $this->belongsTo(Prefecture::class); }
-    public function jobs() { return $this->hasMany(Job::class, 'company_id'); }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function prefecture(): BelongsTo
+    {
+        return $this->belongsTo(Prefecture::class);
+    }
+
+    public function jobs(): HasMany
+    {
+        return $this->hasMany(Job::class, 'company_id');
+    }
 }

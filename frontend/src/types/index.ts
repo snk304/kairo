@@ -25,6 +25,11 @@ export interface JobseekerProfile {
   resumeUrl?: string
 }
 
+export interface CompanyPhoto {
+  id: string
+  photoUrl: string
+}
+
 export interface CompanyProfile {
   id: string
   name: string
@@ -35,6 +40,7 @@ export interface CompanyProfile {
   description?: string
   disabledHireCount: number
   considerations?: Considerations
+  photos?: CompanyPhoto[]
 }
 
 export interface Considerations {

@@ -6,11 +6,13 @@ use App\Http\Requests\CompanyProfileRequest;
 use App\Http\Resources\CompanyProfileResource;
 use App\Http\Resources\JobResource;
 use App\Models\CompanyProfile;
+use App\Services\CompanyProfileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CompanyProfileController extends Controller
 {
+    public function __construct(private CompanyProfileService $companyProfileService) {}
     /**
      * @OA\Get(
      *     path="/companies/{id}",
@@ -165,12 +167,9 @@ class CompanyProfileController extends Controller
             'file' => ['required', 'image', 'mimes:jpeg,png', 'max:5120'],
         ]);
 
-        $path = $request->file('file')->store('company-photos', 'public');
+        $photo = $this->companyProfileService->uploadPhoto($request->user(), $request->file('file'));
 
-        return response()->json(['data' => [
-            'id' => basename($path),
-            'url' => asset('storage/' . $path),
-        ]], 201);
+        return response()->json(['data' => $photo], 201);
     }
 
     /**
@@ -186,6 +185,8 @@ class CompanyProfileController extends Controller
      */
     public function deletePhoto(Request $request, string $id): JsonResponse
     {
+        $this->companyProfileService->deletePhoto($request->user(), $id);
+
         return response()->json(null, 204);
     }
 }

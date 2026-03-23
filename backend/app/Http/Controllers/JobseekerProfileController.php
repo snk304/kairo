@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\JobseekerProfileRequest;
 use App\Http\Resources\JobseekerProfileResource;
 use App\Models\JobseekerProfile;
+use App\Services\JobseekerProfileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class JobseekerProfileController extends Controller
 {
+    public function __construct(private JobseekerProfileService $jobseekerProfileService) {}
     /**
      * @OA\Get(
      *     path="/jobseekers",
@@ -203,16 +204,9 @@ class JobseekerProfileController extends Controller
             'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
-        $profile = $request->user()->jobseekerProfile;
+        $resumeUrl = $this->jobseekerProfileService->uploadResume($request->user(), $request->file('file'));
 
-        if ($profile->resume_path) {
-            Storage::delete($profile->resume_path);
-        }
-
-        $path = $request->file('file')->store('resumes');
-        $profile->update(['resume_path' => $path]);
-
-        return response()->json(['data' => ['resume_url' => Storage::url($path)]]);
+        return response()->json(['data' => ['resume_url' => $resumeUrl]]);
     }
 
     /**
@@ -227,12 +221,7 @@ class JobseekerProfileController extends Controller
      */
     public function deleteResume(Request $request): JsonResponse
     {
-        $profile = $request->user()->jobseekerProfile;
-
-        if ($profile->resume_path) {
-            Storage::delete($profile->resume_path);
-            $profile->update(['resume_path' => null]);
-        }
+        $this->jobseekerProfileService->deleteResume($request->user());
 
         return response()->json(null, 204);
     }

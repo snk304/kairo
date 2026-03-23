@@ -20,6 +20,7 @@ export default function ThreadDetailPage({ params }: { params: Promise<{ id: str
     queryFn: () => threadsApi.show(id),
     select: (res) => res.data.data,
     refetchInterval: 5000,
+    refetchIntervalInBackground: false,
   })
 
   const send = useMutation({

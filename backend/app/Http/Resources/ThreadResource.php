@@ -2,9 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Thread;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @property Thread $resource */
 class ThreadResource extends JsonResource
 {
     public function toArray(Request $request): array
@@ -28,7 +30,7 @@ class ThreadResource extends JsonResource
                 'body' => $this->latestMessage->body,
                 'createdAt' => $this->latestMessage->created_at?->toISOString(),
             ] : null),
-            'unreadCount' => $this->unreadCount($userId),
+            'unreadCount' => $this->resource->unreadCount($userId),
         ];
     }
 }

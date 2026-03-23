@@ -20,11 +20,9 @@ parameters:
         - '#Call to function method_exists\(\) with Laravel\\Sanctum\\PersonalAccessToken and .delete. will always evaluate to true#'
         # HasMany リレーション越しにスコープを呼ぶパターン（例: $profile->jobs()->published()）
         - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany::published\(\)#'
-        # $request->user() は Authenticatable として型付けされるが、
-        # ルートには必ず App\Models\User が渡されるため誤検知を抑制
-        -
-            message: '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model::#'
-            path: app/Http/Controllers
-        -
-            message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::#'
-            path: app/Http/Controllers
+        # Eloquent のマジックプロパティ経由のリレーション解決は
+        # Larastan がジェネリック型なしでは追跡できないため誤検知を抑制
+        # （Controllers / Services / Policies / Resources 全体）
+        - '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model::#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::#'
+        - '#Call to an undefined method App\\Http\\Resources\\ThreadResource::#'

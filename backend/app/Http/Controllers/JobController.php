@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\JobRequest;
 use App\Http\Resources\JobResource;
 use App\Models\Job;
+use App\Services\JobService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class JobController extends Controller
 {
+    public function __construct(private JobService $jobService) {}
     /**
      * @OA\Get(
      *     path="/jobs",
@@ -164,8 +166,7 @@ class JobController extends Controller
     {
         $this->authorize('create', Job::class);
 
-        $profile = $request->user()->companyProfile;
-        $job = $profile->jobs()->create($request->validated());
+        $job = $this->jobService->create($request->user(), $request->validated());
 
         return response()->json(['data' => new JobResource($job)], 201);
     }
@@ -188,9 +189,9 @@ class JobController extends Controller
         $job = Job::findOrFail($id);
         $this->authorize('update', $job);
 
-        $job->update($request->validated());
+        $job = $this->jobService->update($job, $request->validated());
 
-        return response()->json(['data' => new JobResource($job->load(['company', 'jobCategory', 'prefecture']))]);
+        return response()->json(['data' => new JobResource($job)]);
     }
 
     /**
@@ -210,7 +211,7 @@ class JobController extends Controller
         $job = Job::findOrFail($id);
         $this->authorize('delete', $job);
 
-        $job->delete();
+        $this->jobService->delete($job);
 
         return response()->json(null, 204);
     }
@@ -240,7 +241,7 @@ class JobController extends Controller
         $job = Job::findOrFail($id);
         $this->authorize('update', $job);
 
-        $job->update(['status' => $request->status]);
+        $job = $this->jobService->updateStatus($job, $request->status);
 
         return response()->json(['data' => new JobResource($job)]);
     }

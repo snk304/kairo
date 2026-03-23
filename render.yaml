@@ -19,10 +19,12 @@ services:
         sync: false  # Renderがデプロイ後に自動割り当てするURL
 
       # Database（Supabase）
+      # DB_URL に Supabase の Transaction mode 接続文字列を設定
+      # 例: postgresql://postgres.[ref]:[password]@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres
       - key: DB_CONNECTION
         value: pgsql
-      - key: DATABASE_URL
-        sync: false  # Supabase の Connection string (Transaction mode) を設定
+      - key: DB_URL
+        sync: false
 
       # Cache / Session / Queue（Upstash Redis または database）
       - key: CACHE_STORE

@@ -67,7 +67,7 @@ Render ダッシュボード「Environment」タブで以下を設定:
 | `APP_DEBUG` | `false` |
 | `APP_KEY` | （自動生成、または `php artisan key:generate --show` で取得） |
 | `APP_URL` | Render が発行した URL（例: `https://kairo-backend.onrender.com`） |
-| `DATABASE_URL` | Supabase の Transaction mode URL |
+| `DB_URL` | Supabase の Transaction mode URL（`postgresql://postgres.[ref]:...`） |
 | `CACHE_STORE` | `database` |
 | `SESSION_DRIVER` | `database` |
 | `QUEUE_CONNECTION` | `database` |

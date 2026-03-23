@@ -13,4 +13,15 @@ export const companiesApi = {
 
   update: (data: Partial<CompanyProfile>) =>
     apiClient.put<{ data: CompanyProfile }>('/companies/me', data),
+
+  uploadPhoto: (file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return apiClient.post<{ data: { photo_url: string } }>('/companies/me/photos', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
+  deletePhoto: (photoId: string) =>
+    apiClient.delete(`/companies/me/photos/${photoId}`),
 }

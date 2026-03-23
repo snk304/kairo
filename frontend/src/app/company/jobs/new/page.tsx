@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
+import type { AxiosError } from 'axios'
 import { masterApi } from '@/lib/api/master'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -25,6 +26,11 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+interface ValidationErrors {
+  errors?: Record<string, string[]>
+  message?: string
+}
+
 export default function NewJobPage() {
   const router = useRouter()
   const createJob = useCreateJob()
@@ -43,7 +49,7 @@ export default function NewJobPage() {
   const rawPrefectures = prefecturesRes?.data.data
   const prefectures = Array.isArray(rawPrefectures) ? rawPrefectures : []
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setError, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { status: 'draft' },
   })
@@ -51,8 +57,21 @@ export default function NewJobPage() {
   const onSubmit = (data: FormData) => {
     createJob.mutate(data as Parameters<typeof createJob.mutate>[0], {
       onSuccess: () => router.push('/company/jobs'),
+      onError: (err) => {
+        const axiosError = err as AxiosError<ValidationErrors>
+        if (axiosError.response?.status === 422) {
+          const fieldErrors = axiosError.response.data?.errors ?? {}
+          Object.entries(fieldErrors).forEach(([field, messages]) => {
+            setError(field as keyof FormData, { message: messages[0] })
+          })
+        }
+      },
     })
   }
+
+  const isGenericError =
+    createJob.isError &&
+    (createJob.error as AxiosError)?.response?.status !== 422
 
   return (
     <div>
@@ -127,21 +146,29 @@ export default function NewJobPage() {
           />
         </div>
 
+        {isGenericError && (
+          <p role="alert" className="text-sm text-red-600">
+            エラーが発生しました。もう一度お試しください。
+          </p>
+        )}
+
         <div className="flex gap-3">
           <Button
             type="submit"
             variant="outline"
             onClick={() => {}}
             isLoading={createJob.isPending}
+            disabled={createJob.isPending}
           >
-            下書き保存
+            {createJob.isPending ? '保存中...' : '下書き保存'}
           </Button>
           <Button
             type="button"
             onClick={() => handleSubmit((data) => onSubmit({ ...data, status: 'published' }))()}
             isLoading={createJob.isPending}
+            disabled={createJob.isPending}
           >
-            公開する
+            {createJob.isPending ? '処理中...' : '公開する'}
           </Button>
         </div>
       </form>

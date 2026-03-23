@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
+import type { AxiosError } from 'axios'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { authApi } from '@/lib/api/auth'
@@ -23,6 +24,11 @@ const schema = z
 
 type FormData = z.infer<typeof schema>
 
+interface ValidationErrors {
+  errors?: Record<string, string[]>
+  message?: string
+}
+
 export default function RegisterJobseekerPage() {
   const router = useRouter()
   const register_ = useMutation({
@@ -33,8 +39,27 @@ export default function RegisterJobseekerPage() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) })
+
+  const onSubmit = (data: FormData) => {
+    register_.mutate(data, {
+      onError: (err) => {
+        const axiosError = err as AxiosError<ValidationErrors>
+        if (axiosError.response?.status === 422) {
+          const fieldErrors = axiosError.response.data?.errors ?? {}
+          Object.entries(fieldErrors).forEach(([field, messages]) => {
+            setError(field as keyof FormData, { message: messages[0] })
+          })
+        }
+      },
+    })
+  }
+
+  const isGenericError =
+    register_.isError &&
+    (register_.error as AxiosError)?.response?.status !== 422
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center py-12 px-4">
@@ -49,7 +74,7 @@ export default function RegisterJobseekerPage() {
           </p>
 
           <form
-            onSubmit={handleSubmit((data) => register_.mutate(data))}
+            onSubmit={handleSubmit(onSubmit)}
             className="mt-8 flex flex-col gap-4"
             noValidate
           >
@@ -75,14 +100,14 @@ export default function RegisterJobseekerPage() {
               error={errors.password_confirmation?.message}
             />
 
-            {register_.isError && (
+            {isGenericError && (
               <p role="alert" className="text-sm text-red-600 text-center">
-                登録に失敗しました。入力内容を確認してください。
+                エラーが発生しました。もう一度お試しください。
               </p>
             )}
 
             <Button type="submit" isLoading={register_.isPending} className="w-full">
-              登録する
+              {register_.isPending ? '登録中...' : '登録する'}
             </Button>
           </form>
 

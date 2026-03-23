@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import type { AxiosError } from 'axios'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useLogin } from '@/hooks/useAuth'
@@ -17,6 +18,11 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+interface ValidationErrors {
+  errors?: Record<string, string[]>
+  message?: string
+}
+
 function LoginForm() {
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') ?? undefined
@@ -24,12 +30,33 @@ function LoginForm() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   const onSubmit = (data: FormData) => {
-    login.mutate(data)
+    login.mutate(data, {
+      onError: (err) => {
+        const axiosError = err as AxiosError<ValidationErrors>
+        if (axiosError.response?.status === 422) {
+          const fieldErrors = axiosError.response.data?.errors ?? {}
+          Object.entries(fieldErrors).forEach(([field, messages]) => {
+            setError(field as keyof FormData, { message: messages[0] })
+          })
+        }
+      },
+    })
   }
+
+  const isCredentialError =
+    login.isError &&
+    ((login.error as AxiosError)?.response?.status === 401 ||
+      (login.error as AxiosError)?.response?.status === 422)
+
+  const isGenericError =
+    login.isError &&
+    (login.error as AxiosError)?.response?.status !== 401 &&
+    (login.error as AxiosError)?.response?.status !== 422
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center py-12 px-4">
@@ -65,14 +92,19 @@ function LoginForm() {
               </Link>
             </div>
 
-            {login.isError && (
+            {isCredentialError && (
               <p role="alert" className="text-sm text-red-600 text-center">
                 メールアドレスまたはパスワードが正しくありません
               </p>
             )}
+            {isGenericError && (
+              <p role="alert" className="text-sm text-red-600 text-center">
+                エラーが発生しました。もう一度お試しください。
+              </p>
+            )}
 
             <Button type="submit" isLoading={login.isPending} className="w-full">
-              ログイン
+              {login.isPending ? 'ログイン中...' : 'ログイン'}
             </Button>
           </form>
         </div>

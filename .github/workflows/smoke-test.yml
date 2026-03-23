@@ -90,7 +90,7 @@ jobs:
         run: |
           TOKEN="${{ steps.login_jobseeker.outputs.token }}"
 
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/jobseekers/me" \
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/jobseeker/profile" \
             -H "Authorization: Bearer $TOKEN" \
             -H "Accept: application/json")
           [ "$STATUS" = "200" ] && echo "✅ 求職者プロフィール取得 OK" || (echo "❌ 求職者プロフィール取得 NG (Status: $STATUS)" && exit 1)
@@ -119,12 +119,12 @@ jobs:
         run: |
           TOKEN="${{ steps.login_company.outputs.token }}"
 
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/companies/me" \
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/company/profile" \
             -H "Authorization: Bearer $TOKEN" \
             -H "Accept: application/json")
           [ "$STATUS" = "200" ] && echo "✅ 企業プロフィール取得 OK" || (echo "❌ 企業プロフィール取得 NG (Status: $STATUS)" && exit 1)
 
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/jobs/me" \
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/company/jobs" \
             -H "Authorization: Bearer $TOKEN" \
             -H "Accept: application/json")
           [ "$STATUS" = "200" ] && echo "✅ 企業求人一覧取得 OK" || (echo "❌ 企業求人一覧取得 NG (Status: $STATUS)" && exit 1)

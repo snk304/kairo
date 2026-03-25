@@ -360,9 +360,11 @@ export function Header() {
           <Link href="/jobs" className="text-sm" style={{ color: 'var(--ink-mid)' }} onClick={() => setMenuOpen(false)}>
             求人を探す
           </Link>
-          <Link href="/jobseekers" className="text-sm" style={{ color: 'var(--ink-mid)' }} onClick={() => setMenuOpen(false)}>
-            求職者を探す
-          </Link>
+          {(!isAuthenticated() || user?.role === 'company' || user?.role === 'admin') && (
+            <Link href="/jobseekers" className="text-sm" style={{ color: 'var(--ink-mid)' }} onClick={() => setMenuOpen(false)}>
+              求職者を探す
+            </Link>
+          )}
           {!isAuthenticated() ? (
             <>
               <Link href="/auth/login" className="text-sm" style={{ color: 'var(--ink-mid)' }} onClick={() => setMenuOpen(false)}>

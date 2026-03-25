@@ -227,7 +227,6 @@ export function Header() {
                 {/* ドロップダウンメニュー */}
                 {dropdownOpen && (
                   <div
-                    role="menu"
                     className="absolute right-0 mt-2 w-56 rounded-2xl shadow-lg py-1.5 z-50"
                     style={{
                       backgroundColor: 'var(--cream-card)',
@@ -262,7 +261,6 @@ export function Header() {
                     {roleConfig && (
                       <Link
                         href={roleConfig.dashboardHref}
-                        role="menuitem"
                         className="flex items-center gap-2 px-4 py-2.5 text-sm transition-colors cursor-pointer"
                         style={{ color: 'var(--ink)' }}
                         onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--border-light)')}
@@ -280,7 +278,6 @@ export function Header() {
                     {user?.role === 'jobseeker' && (
                       <Link
                         href="/dashboard/profile"
-                        role="menuitem"
                         className="flex items-center gap-2 px-4 py-2.5 text-sm transition-colors cursor-pointer"
                         style={{ color: 'var(--ink)' }}
                         onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--border-light)')}
@@ -296,7 +293,6 @@ export function Header() {
                     {user?.role === 'company' && (
                       <Link
                         href="/company/profile"
-                        role="menuitem"
                         className="flex items-center gap-2 px-4 py-2.5 text-sm transition-colors cursor-pointer"
                         style={{ color: 'var(--ink)' }}
                         onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--border-light)')}
@@ -314,7 +310,6 @@ export function Header() {
                     <div style={{ borderTop: '1px solid var(--border-light)', marginTop: '4px', paddingTop: '4px' }}>
                       <button
                         onClick={() => { logout.mutate(); setDropdownOpen(false) }}
-                        role="menuitem"
                         className="flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors cursor-pointer"
                         style={{ color: '#dc2626' }}
                         onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#fef2f2')}

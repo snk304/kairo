@@ -1,14 +1,58 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { useLogout } from '@/hooks/useAuth'
+
+const ROLE_CONFIG = {
+  jobseeker: {
+    label: '求職者',
+    bg: 'var(--forest)',
+    pale: 'var(--forest-pale)',
+    color: 'var(--forest)',
+    dashboardHref: '/dashboard',
+    dashboardLabel: 'マイページ',
+  },
+  company: {
+    label: '企業',
+    bg: 'var(--clay)',
+    pale: 'var(--clay-pale)',
+    color: 'var(--clay)',
+    dashboardHref: '/company',
+    dashboardLabel: '企業管理',
+  },
+  admin: {
+    label: '管理者',
+    bg: 'var(--ink)',
+    pale: 'var(--border-light)',
+    color: 'var(--ink)',
+    dashboardHref: '/admin',
+    dashboardLabel: '管理画面',
+  },
+} as const
 
 export function Header() {
   const { user, isAuthenticated } = useAuthStore()
   const logout = useLogout()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const role = user?.role as keyof typeof ROLE_CONFIG | undefined
+  const roleConfig = role ? ROLE_CONFIG[role] : null
+  const initial = user?.email?.[0]?.toUpperCase() ?? '?'
+
+  // ドロップダウン外クリックで閉じる
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   return (
     <header
@@ -88,6 +132,7 @@ export function Header() {
             </>
           ) : (
             <>
+              {/* ナビリンク（ロール別） */}
               {user?.role === 'jobseeker' && (
                 <>
                   {[
@@ -106,13 +151,6 @@ export function Header() {
                       {item.label}
                     </Link>
                   ))}
-                  <Link
-                    href="/dashboard"
-                    className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
-                    style={{ backgroundColor: 'var(--forest-pale)', color: 'var(--forest)' }}
-                  >
-                    マイページ
-                  </Link>
                 </>
               )}
               {user?.role === 'company' && (
@@ -132,54 +170,159 @@ export function Header() {
                       {item.label}
                     </Link>
                   ))}
-                  <Link
-                    href="/company"
-                    className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
-                    style={{ backgroundColor: 'var(--forest-pale)', color: 'var(--forest)' }}
-                  >
-                    企業管理
-                  </Link>
                 </>
               )}
-              {user?.role === 'admin' && (
-                <Link
-                  href="/admin"
-                  className="rounded-xl px-4 py-2 text-sm font-medium transition-colors"
-                  style={{ backgroundColor: 'var(--forest-pale)', color: 'var(--forest)' }}
+
+              {/* ユーザーアバター＋ドロップダウン */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen((v) => !v)}
+                  className="flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--forest)]"
+                  style={{ backgroundColor: dropdownOpen ? 'var(--forest-pale)' : 'transparent' }}
+                  onMouseEnter={(e) => {
+                    if (!dropdownOpen) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--border-light)'
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!dropdownOpen) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'
+                  }}
+                  aria-expanded={dropdownOpen}
+                  aria-haspopup="true"
                 >
-                  管理画面
-                </Link>
-              )}
-              {/* ログイン中ユーザー表示 */}
-              <div
-                className="flex items-center gap-2 rounded-xl px-3 py-1.5"
-                style={{ backgroundColor: 'var(--border-light)' }}
-              >
-                <span
-                  className="text-xs font-bold px-2 py-0.5 rounded-full"
-                  style={
-                    user?.role === 'jobseeker'
-                      ? { backgroundColor: 'var(--forest-pale)', color: 'var(--forest)' }
-                      : user?.role === 'company'
-                      ? { backgroundColor: 'var(--clay-pale)', color: 'var(--clay)' }
-                      : { backgroundColor: 'var(--ink)', color: 'var(--cream)' }
-                  }
-                >
-                  {user?.role === 'jobseeker' ? '求職者' : user?.role === 'company' ? '企業' : '管理者'}
-                </span>
-                <span className="text-xs max-w-[120px] truncate" style={{ color: 'var(--ink-muted)' }}>
-                  {user?.email}
-                </span>
+                  {/* アバター */}
+                  <span
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white flex-shrink-0"
+                    style={{ backgroundColor: roleConfig?.bg ?? 'var(--ink)' }}
+                  >
+                    {initial}
+                  </span>
+                  {/* ロール＋メール */}
+                  <span className="flex flex-col items-start leading-tight">
+                    <span
+                      className="text-xs font-bold"
+                      style={{ color: roleConfig?.color ?? 'var(--ink)' }}
+                    >
+                      {roleConfig?.label}
+                    </span>
+                    <span
+                      className="text-xs max-w-[140px] truncate"
+                      style={{ color: 'var(--ink-muted)' }}
+                    >
+                      {user?.email}
+                    </span>
+                  </span>
+                  {/* シェブロン */}
+                  <svg
+                    className="h-3.5 w-3.5 flex-shrink-0 transition-transform"
+                    style={{
+                      color: 'var(--ink-muted)',
+                      transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* ドロップダウンメニュー */}
+                {dropdownOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-56 rounded-2xl shadow-lg py-1.5 z-50"
+                    style={{
+                      backgroundColor: 'var(--cream-card)',
+                      border: '1px solid var(--border-light)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
+                    }}
+                  >
+                    {/* ユーザー情報ヘッダー */}
+                    <div
+                      className="px-4 py-3 mb-1"
+                      style={{ borderBottom: '1px solid var(--border-light)' }}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white flex-shrink-0"
+                          style={{ backgroundColor: roleConfig?.bg ?? 'var(--ink)' }}
+                        >
+                          {initial}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold" style={{ color: roleConfig?.color }}>
+                            {roleConfig?.label}としてログイン中
+                          </p>
+                          <p className="text-xs truncate" style={{ color: 'var(--ink-muted)' }}>
+                            {user?.email}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ダッシュボードリンク */}
+                    {roleConfig && (
+                      <Link
+                        href={roleConfig.dashboardHref}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm transition-colors cursor-pointer"
+                        style={{ color: 'var(--ink)' }}
+                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--border-light)')}
+                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')}
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <svg className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--ink-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        {roleConfig.dashboardLabel}
+                      </Link>
+                    )}
+
+                    {/* ロール別追加リンク */}
+                    {user?.role === 'jobseeker' && (
+                      <Link
+                        href="/dashboard/profile"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm transition-colors cursor-pointer"
+                        style={{ color: 'var(--ink)' }}
+                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--border-light)')}
+                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')}
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <svg className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--ink-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        プロフィール編集
+                      </Link>
+                    )}
+                    {user?.role === 'company' && (
+                      <Link
+                        href="/company/profile"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm transition-colors cursor-pointer"
+                        style={{ color: 'var(--ink)' }}
+                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--border-light)')}
+                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')}
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <svg className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--ink-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        企業プロフィール
+                      </Link>
+                    )}
+
+                    {/* ログアウト */}
+                    <div style={{ borderTop: '1px solid var(--border-light)', marginTop: '4px', paddingTop: '4px' }}>
+                      <button
+                        onClick={() => { logout.mutate(); setDropdownOpen(false) }}
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors cursor-pointer"
+                        style={{ color: '#dc2626' }}
+                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#fef2f2')}
+                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')}
+                      >
+                        <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        ログアウト
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <button
-                onClick={() => logout.mutate()}
-                className="text-sm px-3 py-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)]"
-                style={{ color: 'var(--ink-muted)' }}
-                onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--ink)')}
-                onMouseLeave={(e) => ((e.target as HTMLElement).style.color = 'var(--ink-muted)')}
-              >
-                ログアウト
-              </button>
             </>
           )}
         </div>
@@ -208,75 +351,55 @@ export function Header() {
           className="md:hidden px-4 py-5 flex flex-col gap-4"
           style={{ borderTop: '1px solid var(--border-light)', backgroundColor: 'var(--cream-card)' }}
         >
-          <Link
-            href="/jobs"
-            className="text-sm"
-            style={{ color: 'var(--ink-mid)' }}
-            onClick={() => setMenuOpen(false)}
-          >
+          <Link href="/jobs" className="text-sm" style={{ color: 'var(--ink-mid)' }} onClick={() => setMenuOpen(false)}>
             求人を探す
           </Link>
-          <Link
-            href="/jobseekers"
-            className="text-sm"
-            style={{ color: 'var(--ink-mid)' }}
-            onClick={() => setMenuOpen(false)}
-          >
+          <Link href="/jobseekers" className="text-sm" style={{ color: 'var(--ink-mid)' }} onClick={() => setMenuOpen(false)}>
             求職者を探す
           </Link>
           {!isAuthenticated() ? (
             <>
-              <Link
-                href="/auth/login"
-                className="text-sm"
-                style={{ color: 'var(--ink-mid)' }}
-                onClick={() => setMenuOpen(false)}
-              >
+              <Link href="/auth/login" className="text-sm" style={{ color: 'var(--ink-mid)' }} onClick={() => setMenuOpen(false)}>
                 ログイン
               </Link>
-              <Link
-                href="/auth/register/jobseeker"
-                className="text-sm font-medium"
-                style={{ color: 'var(--forest)' }}
-                onClick={() => setMenuOpen(false)}
-              >
+              <Link href="/auth/register/jobseeker" className="text-sm font-medium" style={{ color: 'var(--forest)' }} onClick={() => setMenuOpen(false)}>
                 求職者登録
               </Link>
-              <Link
-                href="/auth/register/company"
-                className="text-sm font-medium"
-                style={{ color: 'var(--forest)' }}
-                onClick={() => setMenuOpen(false)}
-              >
+              <Link href="/auth/register/company" className="text-sm font-medium" style={{ color: 'var(--forest)' }} onClick={() => setMenuOpen(false)}>
                 企業登録
               </Link>
             </>
           ) : (
             <>
+              {/* SP: ユーザー情報カード */}
               <div
-                className="flex items-center gap-2 rounded-xl px-3 py-2"
-                style={{ backgroundColor: 'var(--border-light)' }}
+                className="flex items-center gap-3 rounded-xl px-3 py-3"
+                style={{ backgroundColor: roleConfig?.pale ?? 'var(--border-light)' }}
               >
                 <span
-                  className="text-xs font-bold px-2 py-0.5 rounded-full"
-                  style={
-                    user?.role === 'jobseeker'
-                      ? { backgroundColor: 'var(--forest-pale)', color: 'var(--forest)' }
-                      : user?.role === 'company'
-                      ? { backgroundColor: 'var(--clay-pale)', color: 'var(--clay)' }
-                      : { backgroundColor: 'var(--ink)', color: 'var(--cream)' }
-                  }
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-base font-bold text-white flex-shrink-0"
+                  style={{ backgroundColor: roleConfig?.bg ?? 'var(--ink)' }}
                 >
-                  {user?.role === 'jobseeker' ? '求職者' : user?.role === 'company' ? '企業' : '管理者'}
+                  {initial}
                 </span>
-                <span className="text-xs truncate" style={{ color: 'var(--ink-muted)' }}>
-                  {user?.email}
-                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold" style={{ color: roleConfig?.color ?? 'var(--ink)' }}>
+                    {roleConfig?.label}としてログイン中
+                  </p>
+                  <p className="text-xs truncate" style={{ color: 'var(--ink-muted)' }}>
+                    {user?.email}
+                  </p>
+                </div>
               </div>
+              {roleConfig && (
+                <Link href={roleConfig.dashboardHref} className="text-sm font-medium" style={{ color: 'var(--ink)' }} onClick={() => setMenuOpen(false)}>
+                  {roleConfig.dashboardLabel}
+                </Link>
+              )}
               <button
                 onClick={() => { logout.mutate(); setMenuOpen(false) }}
-                className="text-left text-sm"
-                style={{ color: 'var(--ink-muted)' }}
+                className="text-left text-sm cursor-pointer"
+                style={{ color: '#dc2626' }}
               >
                 ログアウト
               </button>

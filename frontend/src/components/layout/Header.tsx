@@ -248,7 +248,7 @@ export function Header() {
                           {initial}
                         </span>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold" style={{ color: roleConfig?.color }}>
+                          <p className="text-xs font-bold" style={{ color: roleConfig?.color ?? 'var(--ink)' }}>
                             {roleConfig?.label}としてログイン中
                           </p>
                           <p className="text-xs truncate" style={{ color: 'var(--ink-muted)' }}>

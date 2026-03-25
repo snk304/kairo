@@ -37,7 +37,8 @@ test.describe('求職者ログイン', () => {
     // ロールバッジが「求職者」になっている
     await expect(page.locator('header').getByText('求職者')).toBeVisible()
 
-    // ログアウトボタンが表示される
+    // ドロップダウンを開いてログアウトボタンを確認
+    await page.locator('header button[aria-haspopup="true"]').click()
     await expect(page.locator('header button', { hasText: 'ログアウト' })).toBeVisible()
   })
 
@@ -82,7 +83,8 @@ test.describe('求職者ログイン', () => {
 
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 })
 
-    // ログアウト
+    // ドロップダウンを開いてログアウト
+    await page.locator('header button[aria-haspopup="true"]').click()
     await page.locator('header button', { hasText: 'ログアウト' }).click()
 
     // トップページまたはログインページへリダイレクトされる

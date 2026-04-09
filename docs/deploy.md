@@ -30,7 +30,17 @@
   postgresql://postgres.[ref]:[password]@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres
   ```
 
-### 1-3. Supabase Storage のセットアップ
+### 1-3. RLS（Row-Level Security）の適用
+
+Supabase の PostgREST API 経由の直接アクセスをブロックするため、RLS を有効化します。
+**マイグレーション実行後に必ず適用してください。**
+
+1. Supabase ダッシュボード「SQL Editor」を開く
+2. `supabase/migrations/20260402000000_enable_rls_all_tables.sql` の内容をペーストして実行
+
+> Laravel バックエンドは直接 DB 接続（postgres ロール）を使うため、RLS の影響を受けません。
+
+### 1-4. Supabase Storage のセットアップ
 
 1. 「Storage」→「New bucket」→ 名前: `kairo-uploads`、Public: **ON**
 2. 「Project Settings」→「API」→ Service role key をコピー

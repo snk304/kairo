@@ -10,3 +10,6 @@ Thumbs.db
 # Docker データボリューム（ローカルのDBデータ）
 matching_db/
 docker/data/
+
+# MCP設定（APIキーを含むため）
+.mcp.json
